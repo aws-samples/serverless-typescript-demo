@@ -33,7 +33,7 @@ npm install
 cdk deploy
 ```
 
-The command `cdk deploy` will first build the products maven project using a docker build image with all the required GraalVM tools.
+The command `cdk deploy` will first build the products TypeScript project using a docker build image esbuild.
 Then it will use AWS CloudFormation to deploy the resources to your account.
 
 CDK will create an output of the API Gateway endpoint URL for future use in our load tests.
