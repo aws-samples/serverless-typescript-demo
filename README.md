@@ -61,6 +61,9 @@ filter @type="REPORT"
 | fields greatest(@initDuration, 0) + @duration as duration, ispresent(@initDuration) as coldStart
 | stats count(*) as count, pct(duration, 50) as p50, pct(duration, 90) as p90, pct(duration, 99) as p99, max(duration) as max by coldStart
 ```
+<p align="center">
+  <img src="imgs/test.png" alt="Sample test result"/>
+</p>
 
 ## 👀 With other languages
 
