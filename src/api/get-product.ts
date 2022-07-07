@@ -1,17 +1,21 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { Product } from "../model/product";
 import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
+import middy from "@middy/core";
+import {captureLambdaHandler} from "@aws-lambda-powertools/tracer";
+import {logger, metrics, tracer} from "../powertools/utilities";
+import { injectLambdaContext } from "@aws-lambda-powertools/logger";
+import {MetricUnits} from "@aws-lambda-powertools/metrics";
 
 const store: ProductStore = new DynamoDbStore();
-export const handler = async (
+const lambdaHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   const id = event.pathParameters!.id;
   if (id === undefined) {
-    console.warn("Missing 'id' parameter in path");
+    logger.warn('[GET product] Missing \'id\' parameter in path');
     return {
       statusCode: 400,
       headers: { "content-type": "application/json" },
@@ -19,10 +23,10 @@ export const handler = async (
     };
   }
   try {
-    console.info(`Fetching product ${id}`)
+    logger.info('[GET product] Fetching product with ID '+ id);
     const result = await store.getProduct(id);
     if (!result) {
-      console.warn(`No product with id: ${id}`);
+      logger.warn('[GET product] No product found with ID '+ id);
       return {
         statusCode: 404,
         headers: { "content-type": "application/json" },
@@ -30,7 +34,8 @@ export const handler = async (
       };
     }
 
-    console.info(result);
+    logger.info('[GET product] Product found with ID '+ id, { details: { result } });
+    metrics.addMetric('ProductRetrieved', MetricUnits.Count, 1);
 
     return {
       statusCode: 200,
@@ -38,11 +43,19 @@ export const handler = async (
       body: JSON.stringify(result),
     };
   } catch (error) {
-    console.error(error);
+    logger.error('[GET product] Unexpected error occurred', error);
     return {
       statusCode: 500,
       headers: { "content-type": "application/json" },
       body: JSON.stringify(error),
     };
   }
+};
+
+const handler = middy(lambdaHandler)
+    .use(captureLambdaHandler(tracer))
+    .use(injectLambdaContext(logger, { clearState: true }));
+
+export {
+  handler
 };

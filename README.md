@@ -50,11 +50,55 @@ cd load-test
 
 This is a demanding load test, to change the rate alter the `arrivalRate` value in `load-test.yml`.
 
-### CloudWatch Logs Insights
+## Monitoring
+
+This app leverages the [AWS Lambda Powertools for TypeScript](https://awslabs.github.io/aws-lambda-powertools-typescript) to emit monitoring data. 
+
+### Logs
 
 Using this CloudWatch Logs Insights query you can analyse the latency of the requests made to the Lambda functions.
 
-The query separates cold starts from other requests and then gives you p50, p90 and p99 percentiles.
+This query returns the last 20 logs of the Lambda function that returns the products list.
+
+```
+fields message, timestamp, function_name
+| filter service = 'serverless-typescript-demo'
+| filter function_name LIKE /GetProducts/
+| sort @timestamp desc
+| limit 20
+```
+
+This query returns the last 20 logs that contain an error or a warning.
+
+```
+fields message, timestamp, function_name
+| filter service = 'serverless-typescript-demo'
+| filter level = 'WARN' or level = 'ERROR'
+| sort @timestamp desc
+| limit 20
+```
+
+This query returns the last 20 logs related to a specific product ID.
+
+```
+"63f74370-1d0b-49f8-be86-586efdef13be"
+| fields message, timestamp, function_name
+| filter service = 'serverless-typescript-demo'
+| sort @timestamp desc
+| limit 20
+```
+
+This query returns the last 20 logs of invocations that experienced a cold start.
+
+```
+fields message, timestamp, function_name
+| filter service = 'serverless-typescript-demo'
+| filter cold_start = 1
+| sort @timestamp desc
+| limit 20
+```
+
+This query separates cold starts from other requests and then gives you p50, p90 and p99 percentiles.
 
 ```
 filter @type="REPORT"
@@ -64,6 +108,10 @@ filter @type="REPORT"
 <p align="center">
   <img src="imgs/test.png" alt="Sample test result"/>
 </p>
+
+### Metrics
+
+
 
 ## 👀 With other languages
 

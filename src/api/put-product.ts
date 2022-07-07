@@ -4,15 +4,20 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { Product } from "../model/product";
 import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
+import { captureLambdaHandler } from '@aws-lambda-powertools/tracer';
+import { injectLambdaContext } from '@aws-lambda-powertools/logger';
+import { MetricUnits } from '@aws-lambda-powertools/metrics';
+import middy from "@middy/core";
+import {logger, metrics, tracer} from "../powertools/utilities";
 
 const store: ProductStore = new DynamoDbStore();
-export const handler = async (
+const lambdaHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  console.info(`Event body ${event.body}`);
+
   const id = event.pathParameters!.id;
   if (id === undefined) {
-    console.warn("Missing 'id' parameter in path");
+    logger.warn('[PUT products] Missing \'id\' parameter in path');
     return {
       statusCode: 400,
       headers: { "content-type": "application/json" },
@@ -20,6 +25,7 @@ export const handler = async (
     };
   }
   if (!event.body) {
+    logger.warn('[PUT products] Empty request body');
     return {
       statusCode: 400,
       headers: { "content-type": "application/json" },
@@ -30,12 +36,12 @@ export const handler = async (
   let product: Product;
   try {
     product = JSON.parse(event.body);
-    console.log(`Parsed prduct ${product}`);
+
     if ((typeof product) !== "object" ){
       throw Error("Parsed product is not an object")
     }
   } catch (error) {
-    console.error(error);
+    logger.error('[PUT products] Unexpected error', error);
     return {
       statusCode: 400,
       headers: { "content-type": "application/json" },
@@ -46,9 +52,7 @@ export const handler = async (
   }
 
   if (id !== product.id) {
-    console.error(
-      `Product ID in path ${id} does not match product ID in body ${product.id}`
-    );
+    logger.error( `[PUT products] Product ID in path ${id} does not match product ID in body ${product.id}`);
     return {
       statusCode: 400,
       headers: { "content-type": "application/json" },
@@ -60,17 +64,26 @@ export const handler = async (
 
   try {
     await store.putProduct(product);
+    metrics.addMetric('ProductCreated', MetricUnits.Count, 1);
     return {
       statusCode: 201,
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ message: "Product created" }),
     };
   } catch (error) {
-    console.error(error);
+    logger.error('[PUT products] Unexpected error', error);
     return {
       statusCode: 500,
       headers: { "content-type": "application/json" },
       body: JSON.stringify(error),
     };
   }
+};
+
+const handler = middy(lambdaHandler)
+    .use(captureLambdaHandler(tracer))
+    .use(injectLambdaContext(logger, { clearState: true }));
+
+export {
+  handler
 };
