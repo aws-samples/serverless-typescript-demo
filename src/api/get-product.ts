@@ -4,10 +4,10 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
 import middy from "@middy/core";
-import {captureLambdaHandler} from "@aws-lambda-powertools/tracer";
-import {logger, metrics, tracer} from "../powertools/utilities";
+import { captureLambdaHandler} from "@aws-lambda-powertools/tracer";
+import { logger, metrics, tracer } from "../powertools/utilities";
 import { injectLambdaContext } from "@aws-lambda-powertools/logger";
-import {MetricUnits} from "@aws-lambda-powertools/metrics";
+import { logMetrics, MetricUnits } from "@aws-lambda-powertools/metrics";
 
 const store: ProductStore = new DynamoDbStore();
 const lambdaHandler = async (
@@ -35,7 +35,9 @@ const lambdaHandler = async (
     }
 
     logger.info('[GET product] Product found with ID '+ id, { details: { result } });
-    metrics.addMetric('ProductRetrieved', MetricUnits.Count, 1);
+
+    metrics.addMetric('productRetrieved', MetricUnits.Count, 1);
+    metrics.addMetadata('productId', id);
 
     return {
       statusCode: 200,
@@ -54,7 +56,8 @@ const lambdaHandler = async (
 
 const handler = middy(lambdaHandler)
     .use(captureLambdaHandler(tracer))
-    .use(injectLambdaContext(logger, { clearState: true }));
+    .use(logMetrics(metrics))
+    .use(injectLambdaContext(logger, { clearState: true, logEvent: true }));
 
 export {
   handler

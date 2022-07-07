@@ -6,7 +6,7 @@ import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
 import { captureLambdaHandler } from '@aws-lambda-powertools/tracer';
 import { injectLambdaContext } from '@aws-lambda-powertools/logger';
-import { MetricUnits } from '@aws-lambda-powertools/metrics';
+import {logMetrics, MetricUnits} from '@aws-lambda-powertools/metrics';
 import middy from "@middy/core";
 import {logger, metrics, tracer} from "../powertools/utilities";
 
@@ -64,7 +64,9 @@ const lambdaHandler = async (
 
   try {
     await store.putProduct(product);
-    metrics.addMetric('ProductCreated', MetricUnits.Count, 1);
+
+    metrics.addMetric('productCreated', MetricUnits.Count, 1);
+
     return {
       statusCode: 201,
       headers: { "content-type": "application/json" },
@@ -82,7 +84,8 @@ const lambdaHandler = async (
 
 const handler = middy(lambdaHandler)
     .use(captureLambdaHandler(tracer))
-    .use(injectLambdaContext(logger, { clearState: true }));
+    .use(logMetrics(metrics))
+    .use(injectLambdaContext(logger, { clearState: true, logEvent: true }));
 
 export {
   handler

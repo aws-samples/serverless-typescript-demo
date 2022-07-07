@@ -7,14 +7,15 @@ import { logger, tracer, metrics } from "../powertools/utilities"
 import middy from "@middy/core";
 import { captureLambdaHandler } from '@aws-lambda-powertools/tracer';
 import { injectLambdaContext } from '@aws-lambda-powertools/logger';
-import { MetricUnits } from '@aws-lambda-powertools/metrics';
+import {logMetrics, MetricUnits} from '@aws-lambda-powertools/metrics';
 
 const store: ProductStore = new DynamoDbStore();
 const lambdaHandler = async (): Promise<APIGatewayProxyResult> => {
   try {
     const result = await store.getProducts();
     logger.info('[GET products] Products retrieved', { details: { products: result } });
-    metrics.addMetric('ProductsRetrieved', MetricUnits.Count, 1);
+
+    metrics.addMetric('productsRetrieved', MetricUnits.Count, 1);
 
     return {
       statusCode: 200,
@@ -33,7 +34,8 @@ const lambdaHandler = async (): Promise<APIGatewayProxyResult> => {
 
 const handler = middy(lambdaHandler)
     .use(captureLambdaHandler(tracer))
-    .use(injectLambdaContext(logger, { clearState: true }));
+    .use(logMetrics(metrics))
+    .use(injectLambdaContext(logger, { clearState: true, logEvent: true }));
 
 export {
   handler

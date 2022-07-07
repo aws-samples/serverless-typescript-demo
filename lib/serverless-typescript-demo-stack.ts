@@ -19,7 +19,7 @@ export class ServerlessTypescriptDemoStack extends Stack {
         POWERTOOLS_SERVICE_NAME: 'serverless-typescript-demo',
         POWERTOOLS_LOGGER_LOG_LEVEL: 'WARN',
         POWERTOOLS_LOGGER_SAMPLE_RATE: '0.01',
-        POWERTOOLS_METRICS_NAMESPACE: 'aws-samples',
+        POWERTOOLS_METRICS_NAMESPACE: 'AwsSamples',
         POWERTOOLS_LOGGER_LOG_EVENT: 'true',
     };
 
