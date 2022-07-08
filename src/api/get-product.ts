@@ -10,9 +10,7 @@ import { injectLambdaContext } from "@aws-lambda-powertools/logger";
 import { logMetrics, MetricUnits } from "@aws-lambda-powertools/metrics";
 
 const store: ProductStore = new DynamoDbStore();
-const lambdaHandler = async (
-  event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
+const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 
   logger.appendKeys({
     resource_path: event.requestContext.resourcePath
