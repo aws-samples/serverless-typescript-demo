@@ -61,7 +61,7 @@ Using this CloudWatch Logs Insights query you can analyse the latency of the req
 This query returns the last 20 logs of the Lambda function that returns the products list.
 
 ```
-fields message, timestamp, function_name
+fields resource_path, message, timestamp
 | filter service = 'serverless-typescript-demo'
 | filter function_name LIKE /GetProducts/
 | sort @timestamp desc
@@ -71,7 +71,7 @@ fields message, timestamp, function_name
 This query returns the last 20 logs that contain an error or a warning.
 
 ```
-fields message, timestamp, function_name
+fields resource_path, message, timestamp
 | filter service = 'serverless-typescript-demo'
 | filter level = 'WARN' or level = 'ERROR'
 | sort @timestamp desc
@@ -82,7 +82,7 @@ This query returns the last 20 logs related to a specific product ID.
 
 ```
 "63f74370-1d0b-49f8-be86-586efdef13be"
-| fields message, timestamp, function_name
+| fields resource_path, message, timestamp
 | filter service = 'serverless-typescript-demo'
 | sort @timestamp desc
 | limit 20
@@ -91,7 +91,7 @@ This query returns the last 20 logs related to a specific product ID.
 This query returns the last 20 logs of invocations that experienced a cold start.
 
 ```
-fields message, timestamp, function_name
+fields resource_path, message, timestamp
 | filter service = 'serverless-typescript-demo'
 | filter cold_start = 1
 | sort @timestamp desc
@@ -108,9 +108,6 @@ filter @type="REPORT"
 <p align="center">
   <img src="imgs/test.png" alt="Sample test result"/>
 </p>
-
-### Metrics
-
 
 
 ## 👀 With other languages
