@@ -83,7 +83,7 @@ const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       body: JSON.stringify({ message: "Product created" }),
     };
   } catch (error) {
-    logger.error('Unexpected error occurred', error);
+    logger.error('Unexpected error occurred while trying to create a product', error);
 
     return {
       statusCode: 500,
