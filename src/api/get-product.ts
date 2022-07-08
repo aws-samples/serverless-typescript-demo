@@ -1,17 +1,27 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { Product } from "../model/product";
 import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
+import middy from "@middy/core";
+import { captureLambdaHandler} from "@aws-lambda-powertools/tracer";
+import { logger, metrics, tracer } from "../powertools/utilities";
+import { injectLambdaContext } from "@aws-lambda-powertools/logger";
+import { logMetrics, MetricUnits } from "@aws-lambda-powertools/metrics";
 
 const store: ProductStore = new DynamoDbStore();
-export const handler = async (
-  event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
+const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+
+  logger.appendKeys({
+    resource_path: event.requestContext.resourcePath
+  });
+
   const id = event.pathParameters!.id;
   if (id === undefined) {
-    console.warn("Missing 'id' parameter in path");
+    logger.warn('Missing \'id\' parameter in path while trying to retrieve a product', {
+      details: { eventPathParameters: event.pathParameters }
+    });
+
     return {
       statusCode: 400,
       headers: { "content-type": "application/json" },
@@ -19,10 +29,11 @@ export const handler = async (
     };
   }
   try {
-    console.info(`Fetching product ${id}`)
     const result = await store.getProduct(id);
+
     if (!result) {
-      console.warn(`No product with id: ${id}`);
+      logger.warn('No product with ID '+ id + ' found in the databases while trying to retrieve a product');
+
       return {
         statusCode: 404,
         headers: { "content-type": "application/json" },
@@ -30,7 +41,9 @@ export const handler = async (
       };
     }
 
-    console.info(result);
+    logger.info('Product retrieved with ID '+ id, { details: { product: result } });
+    metrics.addMetric('productRetrieved', MetricUnits.Count, 1);
+    metrics.addMetadata('productId', id);
 
     return {
       statusCode: 200,
@@ -38,11 +51,21 @@ export const handler = async (
       body: JSON.stringify(result),
     };
   } catch (error) {
-    console.error(error);
+    logger.error('Unexpected error occurred while trying to retrieve a product', error);
+
     return {
       statusCode: 500,
       headers: { "content-type": "application/json" },
       body: JSON.stringify(error),
     };
   }
+};
+
+const handler = middy(lambdaHandler)
+    .use(captureLambdaHandler(tracer))
+    .use(logMetrics(metrics))
+    .use(injectLambdaContext(logger, { clearState: true, logEvent: true }));
+
+export {
+  handler
 };

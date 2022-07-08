@@ -9,4 +9,6 @@ API_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
 
 echo $API_URL
 
-artillery run load-test.yml --target "$API_URL"
+ROOT_FOLDER=$(pwd)
+
+artillery run "$ROOT_FOLDER/load-test/load-test.yml" --target "$API_URL"

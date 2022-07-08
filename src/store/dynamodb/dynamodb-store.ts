@@ -12,6 +12,7 @@ import {
   ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { captureAWSv3Client } from "aws-xray-sdk-core";
+import { tracer } from '../../powertools/utilities';
 
 export class DynamoDbStore implements ProductStore {
   private static tableName = process.env.TABLE_NAME;
@@ -20,18 +21,20 @@ export class DynamoDbStore implements ProductStore {
   private static ddbDocClient: DynamoDBDocumentClient =
     DynamoDBDocumentClient.from(DynamoDbStore.ddbClient);
 
-  public getProduct = async (id: string): Promise<Product | undefined> => {
+  @tracer.captureMethod()
+  public async getProduct(id: string): Promise<Product | undefined> {
     const params: GetCommand = new GetCommand({
       TableName: DynamoDbStore.tableName,
       Key: {
         id: id,
       },
     });
-    const restult:GetCommandOutput = await DynamoDbStore.ddbDocClient.send(params);
-    return restult.Item as Product;
+    const result:GetCommandOutput = await DynamoDbStore.ddbDocClient.send(params);
+    return result.Item as Product;
   };
 
-  public putProduct = async (product: Product): Promise<void> => {
+  @tracer.captureMethod()
+  public async putProduct(product: Product): Promise<void> {
     const params: PutCommand = new PutCommand({
       TableName: DynamoDbStore.tableName,
       Item: {
@@ -43,7 +46,8 @@ export class DynamoDbStore implements ProductStore {
     await DynamoDbStore.ddbDocClient.send(params);
   };
 
-  public deleteProduct = async (id: string): Promise<void> => {
+  @tracer.captureMethod()
+  public async deleteProduct(id: string): Promise<void> {
     const params: DeleteCommand = new DeleteCommand({
       TableName: DynamoDbStore.tableName,
       Key: {
@@ -53,7 +57,8 @@ export class DynamoDbStore implements ProductStore {
     await DynamoDbStore.ddbDocClient.send(params);
   };
 
-  public getProducts = async (): Promise<Product[] | undefined> => {
+  @tracer.captureMethod()
+  public async getProducts (): Promise<Product[] | undefined> {
     const params:ScanCommand = new ScanCommand( {
         TableName: DynamoDbStore.tableName,
         Limit: 20

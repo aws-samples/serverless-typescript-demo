@@ -1,17 +1,26 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { Product } from "../model/product";
+import { APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
+import { logger, tracer, metrics } from "../powertools/utilities"
+import middy from "@middy/core";
+import { captureLambdaHandler } from '@aws-lambda-powertools/tracer';
+import { injectLambdaContext } from '@aws-lambda-powertools/logger';
+import { logMetrics, MetricUnits } from '@aws-lambda-powertools/metrics';
 
 const store: ProductStore = new DynamoDbStore();
-export const handler = async (
-  event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
+const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+
+  logger.appendKeys({
+    resource_path: event.requestContext.resourcePath
+  });
+
   try {
     const result = await store.getProducts();
-    console.info(result);
+
+    logger.info('Products retrieved', { details: { products: result } });
+    metrics.addMetric('productsRetrieved', MetricUnits.Count, 1);
 
     return {
       statusCode: 200,
@@ -19,11 +28,21 @@ export const handler = async (
       body: `{"products":${JSON.stringify(result)}}`,
     };
   } catch (error) {
-      console.error(error);
-    return {
-      statusCode: 500,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(error),
-    };
+      logger.info('Unexpected error occurred while trying to retrieve products', error);
+
+      return {
+        statusCode: 500,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(error),
+      };
   }
+};
+
+const handler = middy(lambdaHandler)
+    .use(captureLambdaHandler(tracer))
+    .use(logMetrics(metrics))
+    .use(injectLambdaContext(logger, { clearState: true, logEvent: true }));
+
+export {
+  handler
 };
