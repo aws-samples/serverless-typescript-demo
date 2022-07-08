@@ -1,20 +1,25 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import { APIGatewayProxyResult } from "aws-lambda";
+import { APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
 import { logger, tracer, metrics } from "../powertools/utilities"
 import middy from "@middy/core";
 import { captureLambdaHandler } from '@aws-lambda-powertools/tracer';
 import { injectLambdaContext } from '@aws-lambda-powertools/logger';
-import {logMetrics, MetricUnits} from '@aws-lambda-powertools/metrics';
+import { logMetrics, MetricUnits } from '@aws-lambda-powertools/metrics';
 
 const store: ProductStore = new DynamoDbStore();
-const lambdaHandler = async (): Promise<APIGatewayProxyResult> => {
+const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+
+  logger.appendKeys({
+    resource_path: event.requestContext.resourcePath
+  });
+
   try {
     const result = await store.getProducts();
-    logger.info('[GET products] Products retrieved', { details: { products: result } });
 
+    logger.info('Products retrieved', { details: { products: result } });
     metrics.addMetric('productsRetrieved', MetricUnits.Count, 1);
 
     return {
@@ -23,12 +28,13 @@ const lambdaHandler = async (): Promise<APIGatewayProxyResult> => {
       body: `{"products":${JSON.stringify(result)}}`,
     };
   } catch (error) {
-      logger.info('[GET products] Error occurred while retrieving the products', error);
-    return {
-      statusCode: 500,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(error),
-    };
+      logger.info('Unexpected error occurred while trying to retrieve products', error);
+
+      return {
+        statusCode: 500,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(error),
+      };
   }
 };
 

@@ -13,9 +13,17 @@ const store: ProductStore = new DynamoDbStore();
 const lambdaHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+
+  logger.appendKeys({
+    resource_path: event.requestContext.resourcePath
+  });
+
   const id = event.pathParameters!.id;
   if (id === undefined) {
-    logger.warn('[GET product] Missing \'id\' parameter in path');
+    logger.warn('Missing \'id\' parameter in path while trying to retrieve a product', {
+      details: { eventPathParameters: event.pathParameters }
+    });
+
     return {
       statusCode: 400,
       headers: { "content-type": "application/json" },
@@ -23,10 +31,11 @@ const lambdaHandler = async (
     };
   }
   try {
-    logger.info('[GET product] Fetching product with ID '+ id);
     const result = await store.getProduct(id);
+
     if (!result) {
-      logger.warn('[GET product] No product found with ID '+ id);
+      logger.warn('No product with ID '+ id + ' found in the databases while trying to retrieve a product');
+
       return {
         statusCode: 404,
         headers: { "content-type": "application/json" },
@@ -34,8 +43,7 @@ const lambdaHandler = async (
       };
     }
 
-    logger.info('[GET product] Product found with ID '+ id, { details: { result } });
-
+    logger.info('Product retrieved with ID '+ id, { details: { product: result } });
     metrics.addMetric('productRetrieved', MetricUnits.Count, 1);
     metrics.addMetadata('productId', id);
 
@@ -45,7 +53,8 @@ const lambdaHandler = async (
       body: JSON.stringify(result),
     };
   } catch (error) {
-    logger.error('[GET product] Unexpected error occurred', error);
+    logger.error('Unexpected error occurred while trying to retrieve a product', error);
+
     return {
       statusCode: 500,
       headers: { "content-type": "application/json" },
