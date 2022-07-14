@@ -54,8 +54,8 @@ const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
 
 const handler = middy(lambdaHandler)
     .use(captureLambdaHandler(tracer))
-    .use(logMetrics(metrics))
-    .use(injectLambdaContext(logger, { clearState: true, logEvent: true }));
+    .use(logMetrics(metrics, { captureColdStartMetric: true }))
+    .use(injectLambdaContext(logger, { clearState: true }));
 
 export {
   handler
