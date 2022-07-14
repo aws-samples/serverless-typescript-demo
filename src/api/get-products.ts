@@ -1,5 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
+// blob/main/src/api/get-products.ts
 import { APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
@@ -28,7 +29,7 @@ const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       body: `{"products":${JSON.stringify(result)}}`,
     };
   } catch (error) {
-      logger.info('Unexpected error occurred while trying to retrieve products', error);
+      logger.error('Unexpected error occurred while trying to retrieve products', error as Error);
 
       return {
         statusCode: 500,
@@ -40,8 +41,8 @@ const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
 
 const handler = middy(lambdaHandler)
     .use(captureLambdaHandler(tracer))
-    .use(logMetrics(metrics))
-    .use(injectLambdaContext(logger, { clearState: true, logEvent: true }));
+    .use(logMetrics(metrics, { captureColdStartMetric: true }))
+    .use(injectLambdaContext(logger, { clearState: true }));
 
 export {
   handler
