@@ -34,8 +34,7 @@ export class ServerlessTypescriptDemoStack extends Stack {
   };
 
     const esBuildSettings = {
-      minify: true,
-      platform: "node"
+      minify: true
     }
 
     const functionSettings = {
