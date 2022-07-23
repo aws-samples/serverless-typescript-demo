@@ -14,15 +14,6 @@ export class ServerlessTypescriptDemoStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const envVariables = {
-        AWS_ACCOUNT_ID: Stack.of(this).account,
-        POWERTOOLS_SERVICE_NAME: 'serverless-typescript-demo',
-        POWERTOOLS_LOGGER_LOG_LEVEL: 'WARN',
-        POWERTOOLS_LOGGER_SAMPLE_RATE: '0.01',
-        POWERTOOLS_LOGGER_LOG_EVENT: 'true',
-        POWERTOOLS_METRICS_NAMESPACE: 'AwsSamples',
-    };
-
     const productsTable = new aws_dynamodb.Table(this, "Products", {
       tableName: "Products",
       partitionKey: {
@@ -33,20 +24,39 @@ export class ServerlessTypescriptDemoStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY
     });
 
+    const envVariables = {
+      AWS_ACCOUNT_ID: Stack.of(this).account,
+      POWERTOOLS_SERVICE_NAME: 'serverless-typescript-demo',
+      POWERTOOLS_LOGGER_LOG_LEVEL: 'WARN',
+      POWERTOOLS_LOGGER_SAMPLE_RATE: '0.01',
+      POWERTOOLS_LOGGER_LOG_EVENT: 'true',
+      POWERTOOLS_METRICS_NAMESPACE: 'AwsSamples',
+  };
+
+    const esBuildSettings = {
+      minify: true
+    }
+
+    const functionSettings = {
+      handler: "handler",
+      runtime: aws_lambda.Runtime.NODEJS_16_X,
+      memorySize: 256,
+      environment: {
+        TABLE_NAME: productsTable.tableName,
+        ...envVariables
+      },
+      logRetention: aws_logs.RetentionDays.ONE_WEEK,
+      tracing: aws_lambda.Tracing.ACTIVE,
+      bundling: esBuildSettings
+    }
+
     const getProductsFunction = new aws_lambda_nodejs.NodejsFunction(
       this,
       "GetProductsFunction",
       {
         awsSdkConnectionReuse: true,
         entry: "./src/api/get-products.ts",
-        handler: "handler",
-        memorySize: 256,
-        environment: {
-          TABLE_NAME: productsTable.tableName,
-          ...envVariables
-        },
-        logRetention: aws_logs.RetentionDays.ONE_WEEK,
-        tracing: aws_lambda.Tracing.ACTIVE,
+        ...functionSettings
       }
     );
 
@@ -56,14 +66,7 @@ export class ServerlessTypescriptDemoStack extends Stack {
       {
         awsSdkConnectionReuse: true,
         entry: "./src/api/get-product.ts",
-        handler: "handler",
-        memorySize: 256,
-        environment: {
-          TABLE_NAME: productsTable.tableName,
-          ...envVariables
-        },
-        logRetention: aws_logs.RetentionDays.ONE_WEEK,
-        tracing: aws_lambda.Tracing.ACTIVE,
+        ...functionSettings
       }
     );
 
@@ -73,14 +76,7 @@ export class ServerlessTypescriptDemoStack extends Stack {
       {
         awsSdkConnectionReuse: true,
         entry: "./src/api/put-product.ts",
-        handler: "handler",
-        memorySize: 256,
-        environment: {
-          TABLE_NAME: productsTable.tableName,
-          ...envVariables
-        },
-        logRetention: aws_logs.RetentionDays.ONE_WEEK,
-        tracing: aws_lambda.Tracing.ACTIVE,
+        ...functionSettings
       }
     );
 
@@ -90,14 +86,7 @@ export class ServerlessTypescriptDemoStack extends Stack {
       {
         awsSdkConnectionReuse: true,
         entry: "./src/api/delete-product.ts",
-        handler: "handler",
-        memorySize: 256,
-        environment: {
-          TABLE_NAME: productsTable.tableName,
-          ...envVariables
-        },
-        logRetention: aws_logs.RetentionDays.ONE_WEEK,
-        tracing: aws_lambda.Tracing.ACTIVE,
+        ...functionSettings
       }
     );
 
