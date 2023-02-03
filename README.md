@@ -44,8 +44,7 @@ CDK will create an output of the API Gateway endpoint URL for future use in our 
 with the following command.
 
 ```bash
-cd load-test
-./run-load-test.sh
+./load-test/run-load-test.sh
 ```
 
 This is a demanding load test, to change the rate alter the `arrivalRate` value in `load-test.yml`.
