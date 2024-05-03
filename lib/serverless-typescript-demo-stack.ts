@@ -34,13 +34,25 @@ export class ServerlessTypescriptDemoStack extends Stack {
   };
 
     const esBuildSettings = {
-      minify: true
+      // banner: "import { createRequire } from 'module';const require = createRequire(import.meta.url);",
+      minify: true,
+      // format: aws_lambda_nodejs.OutputFormat.ESM,  
+      // externalModules: [
+      //   '@aws-lambda-powertools/*',
+      // ],
     }
+
+    const powertoolsLayer = aws_lambda.LayerVersion.fromLayerVersionArn(
+      this,
+      'PowertoolsLayer',
+      `arn:aws:lambda:${Stack.of(this).region}:094274105915:layer:AWSLambdaPowertoolsTypeScriptV2:5`
+    );
 
     const functionSettings = {
       handler: "handler",
       runtime: aws_lambda.Runtime.NODEJS_16_X,
       memorySize: 256,
+      // layers: [powertoolsLayer],
       environment: {
         TABLE_NAME: productsTable.tableName,
         ...envVariables

@@ -4,11 +4,12 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { Product } from "../model/product";
 import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
-import { captureLambdaHandler } from '@aws-lambda-powertools/tracer';
-import { injectLambdaContext } from '@aws-lambda-powertools/logger';
-import { logMetrics, MetricUnits } from '@aws-lambda-powertools/metrics';
-import middy from "@middy/core";
+import middy from '@middy/core';
+import { captureLambdaHandler} from "@aws-lambda-powertools/tracer/middleware";
+import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
+import { logMetrics } from "@aws-lambda-powertools/metrics/middleware";
 import { logger, metrics, tracer } from "../powertools/utilities";
+import { MetricUnit } from "@aws-lambda-powertools/metrics";
 
 const store: ProductStore = new DynamoDbStore();
 const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -74,7 +75,7 @@ const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
   try {
     await store.putProduct(product);
 
-    metrics.addMetric('productCreated', MetricUnits.Count, 1);
+    metrics.addMetric('productCreated', MetricUnit.Count, 1);
     metrics.addMetadata('productId', id);
 
     return {

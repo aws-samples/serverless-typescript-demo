@@ -23,12 +23,12 @@
     "typescript": "~3.9.7"
   },
   "dependencies": {
-    "@aws-lambda-powertools/logger": "^1.0.1",
-    "@aws-lambda-powertools/metrics": "^1.0.1",
-    "@aws-lambda-powertools/tracer": "^1.0.1",
+    "@aws-lambda-powertools/logger": "^2.1.0",
+    "@aws-lambda-powertools/metrics": "^2.1.0",
+    "@aws-lambda-powertools/tracer": "^2.1.0",
     "@aws-sdk/client-dynamodb": "^3.363.0",
     "@aws-sdk/lib-dynamodb": "^3.44.0",
-    "@middy/core": "^3.1.0",
+    "@middy/core": "^5.3.2",
     "aws-cdk-lib": "^2.80.0",
     "aws-xray-sdk-core": "^3.3.4",
     "constructs": "^10.0.0",
