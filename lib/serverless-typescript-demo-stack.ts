@@ -14,6 +14,8 @@ export class ServerlessTypescriptDemoStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
+    const useLayer = true;
+
     const productsTable = new aws_dynamodb.Table(this, "Products", {
       tableName: "Products",
       partitionKey: {
@@ -34,12 +36,10 @@ export class ServerlessTypescriptDemoStack extends Stack {
   };
 
     const esBuildSettings = {
-      // banner: "import { createRequire } from 'module';const require = createRequire(import.meta.url);",
       minify: true,
-      // format: aws_lambda_nodejs.OutputFormat.ESM,  
-      // externalModules: [
-      //   '@aws-lambda-powertools/*',
-      // ],
+      externalModules: useLayer ? [
+        '@aws-lambda-powertools/*',
+      ] : [],
     }
 
     const powertoolsLayer = aws_lambda.LayerVersion.fromLayerVersionArn(
@@ -52,7 +52,7 @@ export class ServerlessTypescriptDemoStack extends Stack {
       handler: "handler",
       runtime: aws_lambda.Runtime.NODEJS_16_X,
       memorySize: 256,
-      // layers: [powertoolsLayer],
+      layers: useLayer ? [powertoolsLayer] : [],
       environment: {
         TABLE_NAME: productsTable.tableName,
         ...envVariables
