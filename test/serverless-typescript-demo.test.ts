@@ -1,17 +1,39 @@
-// import { Template } from '@aws-cdk/assertions';
-// import * as cdk from '@aws-cdk/core';
-// import * as ServerlessTypescriptDemo from '../lib/serverless-typescript-demo-stack';
+import { Stack } from 'aws-cdk-lib';
+import { Template } from 'aws-cdk-lib/assertions';
+import { ServerlessTypescriptDemoStack } from '../lib/serverless-typescript-demo-stack';
 
-// example test. To run these tests, uncomment this file along with the
-// example resource in lib/serverless-typescript-demo-stack.ts
-test('SQS Queue Created', () => {
-//   const app = new cdk.App();
-//     // WHEN
-//   const stack = new ServerlessTypescriptDemo.ServerlessTypescriptDemoStack(app, 'MyTestStack');
-//     // THEN
-//   const template = Template.fromStack(stack);
+describe('ServerlessTypescriptDemoStack', () => {
+  let stack: Stack;
 
-//   template.hasResourceProperties('AWS::SQS::Queue', {
-//     VisibilityTimeout: 300
-//   });
+  beforeAll(() => {
+    const app = new Stack();
+    stack = new ServerlessTypescriptDemoStack(app, 'MyTestStack');
+  });
+
+  it('creates a DynamoDB table with correct configurations', () => {
+    const template = Template.fromStack(stack);
+    
+    template.resourceCountIs('AWS::DynamoDB::Table', 1);
+    template.hasResourceProperties('AWS::DynamoDB::Table', {
+      TableName: 'Products',
+      BillingMode: 'PAY_PER_REQUEST'
+    });
+  });
+
+  it('creates lambda functions with the necessary environment variables', () => {
+    const template = Template.fromStack(stack);
+    
+    template.resourceCountIs('AWS::Lambda::Function', 5);
+  });
+
+  it('creates an API Gateway with correct configuration', () => {
+    const template = Template.fromStack(stack);
+
+    template.resourceCountIs('AWS::ApiGateway::RestApi', 1);
+    template.hasResourceProperties('AWS::ApiGateway::RestApi', {
+      Name: 'ProductsApi'
+    });
+  });
+
 });
+

@@ -14,6 +14,9 @@ export class ServerlessTypescriptDemoStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
+    // Use this toggle to switch between using the Lambda Layer and building the library into the function.
+    const useLayer = true;
+
     const productsTable = new aws_dynamodb.Table(this, "Products", {
       tableName: "Products",
       partitionKey: {
@@ -34,13 +37,24 @@ export class ServerlessTypescriptDemoStack extends Stack {
   };
 
     const esBuildSettings = {
-      minify: true
+      minify: true,
+      externalModules: useLayer ? [
+        '@aws-lambda-powertools/*',
+        '@aws-sdk/*',
+      ] : [],
     }
+
+    const powertoolsLayer = aws_lambda.LayerVersion.fromLayerVersionArn(
+      this,
+      'PowertoolsLayer',
+      `arn:aws:lambda:${Stack.of(this).region}:094274105915:layer:AWSLambdaPowertoolsTypeScriptV2:5`
+    );
 
     const functionSettings = {
       handler: "handler",
-      runtime: aws_lambda.Runtime.NODEJS_16_X,
+      runtime: aws_lambda.Runtime.NODEJS_18_X,
       memorySize: 256,
+      layers: useLayer ? [powertoolsLayer] : [],
       environment: {
         TABLE_NAME: productsTable.tableName,
         ...envVariables

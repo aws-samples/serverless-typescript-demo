@@ -3,11 +3,13 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { DynamoDbStore } from "../store/dynamodb/dynamodb-store";
 import { ProductStore } from "../store/product-store";
-import middy from "@middy/core";
-import { captureLambdaHandler} from "@aws-lambda-powertools/tracer";
+import middy from '@middy/core';
+import { captureLambdaHandler} from "@aws-lambda-powertools/tracer/middleware";
 import { logger, metrics, tracer } from "../powertools/utilities";
-import { injectLambdaContext } from "@aws-lambda-powertools/logger";
-import { logMetrics, MetricUnits } from "@aws-lambda-powertools/metrics";
+import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
+import { logMetrics } from "@aws-lambda-powertools/metrics/middleware";
+import { MetricUnit } from "@aws-lambda-powertools/metrics";
+
 
 const store: ProductStore = new DynamoDbStore();
 const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -42,7 +44,7 @@ const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
     }
 
     logger.info('Product retrieved with ID '+ id, { details: { product: result } });
-    metrics.addMetric('productRetrieved', MetricUnits.Count, 1);
+    metrics.addMetric('productRetrieved', MetricUnit.Count, 1);
     metrics.addMetadata('productId', id);
 
     return {

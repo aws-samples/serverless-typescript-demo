@@ -3,6 +3,7 @@ import { Metrics } from '@aws-lambda-powertools/metrics';
 import { Tracer } from '@aws-lambda-powertools/tracer';
 
 const logger = new Logger({
+    serviceName: 'serverless-typescript-demo',
     persistentLogAttributes: {
         aws_account_id: process.env.AWS_ACCOUNT_ID || 'N/A',
         aws_region: process.env.AWS_REGION|| 'N/A',
@@ -10,6 +11,7 @@ const logger = new Logger({
 });
 
 const metrics = new Metrics({
+    namespace: 'AwsSamples',
     defaultDimensions: {
         aws_account_id: process.env.AWS_ACCOUNT_ID || 'N/A',
         aws_region: process.env.AWS_REGION|| 'N/A',
