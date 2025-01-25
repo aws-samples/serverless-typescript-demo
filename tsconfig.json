@@ -3,7 +3,8 @@
     "target": "ES2018",
     "module": "commonjs",
     "lib": [
-      "es2018"
+      "ES2018",
+      "DOM"
     ],
     "declaration": true,
     "strict": true,
@@ -21,10 +22,14 @@
     "strictPropertyInitialization": false,
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],    
+    "outDir": "dist",
+    "forceConsistentCasingInFileNames": true,
+    "rootDir": "."
   },
   "exclude": [
     "node_modules",
-    "cdk.out"
+    "cdk.out",
+    "dist"
   ]
 }

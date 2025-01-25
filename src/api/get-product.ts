@@ -50,8 +50,10 @@ const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       headers: { "content-type": "application/json" },
       body: JSON.stringify(result),
     };
-  } catch (error) {
-    logger.error('Unexpected error occurred while trying to retrieve a product', error);
+  } catch (error: unknown) {
+    logger.error('Unexpected error occurred while trying to retrieve a product', {
+      error: error instanceof Error ? error.message : String(error)
+    });
 
     return {
       statusCode: 500,
